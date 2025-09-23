@@ -1,0 +1,49 @@
+name: Build & Push Docker Image to AWS ECR (OIDC)
+
+on:
+  push:
+    branches: [ "master" ]   # Trigger on pushes to main branch
+
+permissions:
+  id-token: write          # ✅ Required for OIDC
+  contents: read           # ✅ Required to checkout code
+
+env:
+  AWS_REGION: us-west-2          # 👉 Change to your AWS region
+  ECR_REPOSITORY: image-ecr       # 👉 Your ECR repository name
+  IMAGE_TAG: latest                 # Or use ${{ github.sha }} for unique tags
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout source code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2️⃣ Configure AWS credentials using OIDC
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::587736032569:role/image-ecr   # 👉 Replace
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 3️⃣ Authenticate Docker to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 4️⃣ Build, Tag, and Push Docker Image
+      - name: Build and Push
+        run: |
+          # Build image
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+
+          # Tag image for ECR
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG \
+            ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+
+          # Push image to ECR
+          docker push \
+            ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
