@@ -9,7 +9,7 @@ permissions:
   contents: read           # ✅ Required to checkout code
 
 env:
-  AWS_REGION: us-west-2          # 👉 Change to your AWS region
+  AWS_REGION: ap-south-1        # 👉 Change to your AWS region
   ECR_REPOSITORY: image-ecr       # 👉 Your ECR repository name
   IMAGE_TAG: latest                 # Or use ${{ github.sha }} for unique tags
 
